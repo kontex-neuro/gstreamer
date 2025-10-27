@@ -7,6 +7,9 @@ jobs:
   build:
     runs-on: macos-15
 
+    env:
+      GSTREAMER_VERSION: '1.26'
+
     steps:
       - uses: actions/checkout@v5
 
@@ -14,41 +17,41 @@ jobs:
         with:
           python-version: 3.13
 
-      - name: Install Meson and Ninja
+      - name: Install build tools
         run: pip install meson ninja
 
-      - name: Cache GStreamer
+      - name: Cache gstreamer
         uses: actions/cache@v4
         with:
           path: gstreamer
           key: ${{ runner.os }}-gstreamer-${{ hashFiles('**/gstreamer') }}
           restore-keys: |
-            ${{ runner.os }}-gstreamer-
+            ${{ runner.os }}-gstreamer
 
-      - name: Clone GStreamer
+      - name: Clone gstreamer
         if: steps.cache-gstreamer.outputs.cache-hit != 'true'
         run: |
           if [ ! -d gstreamer ]; then
-            git clone -b 1.26 --single-branch https://gitlab.freedesktop.org/gstreamer/gstreamer.git
+            git clone -b $GSTREAMER_VERSION --single-branch https://gitlab.freedesktop.org/gstreamer/gstreamer.git
           fi
 
       - name: Configure build with Meson
         working-directory: gstreamer
         run: meson setup --prefix=${{ runner.temp }}/gstreamer builddir
-        
+
       - name: Build with Ninja
         working-directory: gstreamer
         run: ninja -C builddir
 
-      - name: Install GStreamer
+      - name: Install gstreamer
         working-directory: gstreamer
         run: meson install -C builddir
 
       - name: Tar the install directory
-        run: tar -czvf ${{ runner.temp }}/gstreamer.tar.gz -C ${{ runner.temp }}/gstreamer .
+        run: tar -czvf ${{ runner.temp }}/gstreamer-${{ env.GSTREAMER_VERSION }}.tar.gz -C ${{ runner.temp }}/gstreamer .
 
       - name: Upload install artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: GStreamer-Package
-          path: ${{ runner.temp }}/gstreamer.tar.gz
+          name: ${{ runner.os }}-gstreamer-${{ env.GSTREAMER_VERSION }}
+          path: ${{ runner.temp }}/gstreamer-${{ env.GSTREAMER_VERSION }}.tar.gz
