@@ -1,0 +1,59 @@
+name: build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-15
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: 3.13
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt install -y flex bison
+
+      - name: Install Meson and Ninja
+        run: pip install meson ninja
+
+      - name: Cache GStreamer
+        uses: actions/cache@v4
+        with:
+          path: gstreamer
+          key: ${{ runner.os }}-gstreamer-${{ hashFiles('**/gstreamer') }}
+          restore-keys: |
+            ${{ runner.os }}-gstreamer-
+
+      - name: Clone GStreamer
+        if: steps.cache-gstreamer.outputs.cache-hit != 'true'
+        run: |
+          if [ ! -d gstreamer ]; then
+            git clone -b 1.26 --single-branch https://gitlab.freedesktop.org/gstreamer/gstreamer.git
+          fi
+
+      - name: Configure build with Meson
+        working-directory: gstreamer
+        run: meson setup --prefix=${{ runner.temp }}/gstreamer builddir
+        
+      - name: Build with Ninja
+        working-directory: gstreamer
+        run: ninja -C builddir
+
+      - name: Install GStreamer
+        working-directory: gstreamer
+        run: meson install -C builddir
+
+      - name: Tar the install directory
+        run: tar -czvf ${{ runner.temp }}/gstreamer.tar.gz -C ${{ runner.temp }}/gstreamer .
+
+      - name: Upload install artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: GStreamer-Package
+          path: ${{ runner.temp }}/gstreamer.tar.gz
