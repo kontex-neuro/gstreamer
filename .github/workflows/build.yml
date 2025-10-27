@@ -14,11 +14,6 @@ jobs:
         with:
           python-version: 3.13
 
-      - name: Install build dependencies
-        run: |
-          sudo apt-get update -y
-          sudo apt install -y flex bison
-
       - name: Install Meson and Ninja
         run: pip install meson ninja
 
