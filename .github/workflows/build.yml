@@ -75,23 +75,12 @@ jobs:
         if: matrix.os == 'windows-2022'
         env:
           PKG_CONFIG_PATH: ${{ env.VCPKG_INSTALLATION_ROOT }}\installed\x64-windows\lib\pkgconfig;${{ env.PKG_CONFIG_PATH }}
-        run: |
-          meson setup builddir --prefix=${{ runner.temp }}/gstreamer \
-            ${{ env.default_meson_args }} \
-            -Dgst-plugins-bad:qsv=enabled \
-            -Dgst-plugins-bad:d3d11=enabled \
-            -Dgst-plugins-bad:qt6d3d11=enabled \
-            -Dlibxml2:python=false
+        run: meson setup builddir --prefix=${{ runner.temp }}/gstreamer ${{ env.default_meson_args }} -Dgst-plugins-bad:qsv=enabled -Dgst-plugins-bad:d3d11=enabled -Dgst-plugins-bad:qt6d3d11=enabled -Dlibxml2:python=false
 
       - name: Configure meson (macOS)
         working-directory: gstreamer
         if: matrix.os == 'macos-15'
-        run: |
-          meson setup builddir \
-            --prefix=${{ runner.temp }}/gstreamer \
-            ${{ env.default_meson_args }} \
-            -Dgst-plugins-good:gl=enabled \
-            -Dgst-plugins-good:qt6=enabled
+        run: meson setup builddir --prefix=${{ runner.temp }}/gstreamer ${{ env.default_meson_args }} -Dgst-plugins-good:gl=enabled -Dgst-plugins-good:qt6=enabled
 
       - name: Build
         working-directory: gstreamer
