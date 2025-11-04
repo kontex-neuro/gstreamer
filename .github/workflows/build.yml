@@ -22,16 +22,9 @@ jobs:
       gst_version: "1.26"
       default_meson_args: >
         -Dbase=enabled
-        -Dgst-plugins-base:videoconvertscale=enabled
         -Dgood=enabled
-        -Dgst-plugins-good:jpeg=enabled
-        -Dgst-plugins-good:multifile=enabled
-        -Dgst-plugins-good:matroska=enabled
         -Dbad=enabled
         -Dgst-plugins-bad:srt=enabled
-        -Dgst-plugins-bad:jpegformat=enabled
-        -Dgst-plugins-bad:debugutils=enabled
-        -Dgst-plugins-bad:videoparsers=enabled
         -Dlibav=enabled
 
     steps:
@@ -50,7 +43,7 @@ jobs:
 
       - name: Install SRT (Windows)
         if: matrix.os == 'windows-2022'
-        run: vcpkg install libsrt
+        run: vcpkg install libsrt --vcpkg-root=${{ env.VCPKG_INSTALLATION_ROOT }}
 
       - name: Install SRT (macOS)
         if: matrix.os == 'macos-15'
@@ -83,13 +76,12 @@ jobs:
         env:
           meson_args: >
             ${{ env.default_meson_args }}
-            --prefix=${{ runner.temp }}/gstreamer
             -Dgst-plugins-bad:qsv=enabled
             -Dgst-plugins-bad:d3d11=enabled
             -Dgst-plugins-bad:qt6d3d11=enabled
             -Dlibxml2:python=false
           PKG_CONFIG_PATH: ${{ env.VCPKG_INSTALLATION_ROOT }}\installed\x64-windows\lib\pkgconfig;${{ env.PKG_CONFIG_PATH }}
-        run: meson setup builddir ${{ env.meson_args }}
+        run: meson setup builddir --prefix=${{ runner.temp }}/gstreamer ${{ env.meson_args }}
 
       - name: Configure meson (macOS)
         working-directory: gstreamer
@@ -97,10 +89,9 @@ jobs:
         env:
           meson_args: >
             ${{ env.default_meson_args }}
-            --prefix=${{ runner.temp }}/gstreamer
             -Dgst-plugins-good:gl=enabled
             -Dgst-plugins-good:qt6=enabled
-        run: meson setup builddir ${{ env.meson_args }}
+        run: meson setup builddir --prefix=${{ runner.temp }}/gstreamer ${{ env.meson_args }}
 
       - name: Build
         working-directory: gstreamer
