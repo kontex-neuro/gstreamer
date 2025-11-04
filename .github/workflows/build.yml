@@ -20,12 +20,6 @@ jobs:
 
     env:
       gst_version: "1.26"
-      default_meson_args: >
-        -Dbase=enabled
-        -Dgood=enabled
-        -Dbad=enabled
-        -Dgst-plugins-bad:srt=enabled
-        -Dlibav=enabled
 
     steps:
       - uses: actions/checkout@v5
@@ -74,13 +68,33 @@ jobs:
         working-directory: gstreamer
         if: matrix.os == 'windows-2022'
         env:
+          meson_args: >
+            --prefix=${{ runner.temp }}/gstreamer
+            -Dbase=enabled
+            -Dgood=enabled
+            -Dbad=enabled
+            -Dgst-plugins-bad:srt=enabled
+            -Dgst-plugins-bad:qsv=enabled
+            -Dgst-plugins-bad:d3d11=enabled
+            -Dgst-plugins-bad:qt6d3d11=enabled
+            -Dlibav=enabled
+            -Dlibxml2:python=false
           PKG_CONFIG_PATH: ${{ env.VCPKG_INSTALLATION_ROOT }}\installed\x64-windows\lib\pkgconfig;${{ env.PKG_CONFIG_PATH }}
-        run: meson setup builddir --prefix=${{ runner.temp }}/gstreamer ${{ env.default_meson_args }} -Dgst-plugins-bad:qsv=enabled -Dgst-plugins-bad:d3d11=enabled -Dgst-plugins-bad:qt6d3d11=enabled -Dlibxml2:python=false
+        run: meson setup builddir ${{ env.meson_args }}
 
       - name: Configure meson (macOS)
         working-directory: gstreamer
         if: matrix.os == 'macos-15'
-        run: meson setup builddir --prefix=${{ runner.temp }}/gstreamer ${{ env.default_meson_args }} -Dgst-plugins-good:gl=enabled -Dgst-plugins-good:qt6=enabled
+        env:
+          meson_args: >
+            --prefix=${{ runner.temp }}/gstreamer
+            -Dbase=enabled
+            -Dgood=enabled
+            -Dgst-plugins-good:gl=enabled
+            -Dgst-plugins-good:qt6=enabled
+            -Dbad=enabled
+            -Dlibav=enabled
+        run: meson setup builddir ${{ env.meson_args }}
 
       - name: Build
         working-directory: gstreamer
