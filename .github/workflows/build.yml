@@ -51,11 +51,6 @@ jobs:
           dir: ${{ github.workspace }}
           modules: 'qtshadertools'
 
-      - name: List Qt bin
-        run: |
-          echo "Listing Qt bin directory:"
-          ls -la ${{ github.workspace }}/Qt/6.8.3/macos/bin || true
-
       - name: Cache
         uses: actions/cache@v4
         with:
