@@ -43,7 +43,7 @@ jobs:
 
       - name: Install SRT (Windows)
         if: matrix.os == 'windows-2022'
-        run: vcpkg install libsrt --vcpkg-root=${{ env.VCPKG_INSTALLATION_ROOT }}
+        run: vcpkg install libsrt --vcpkg-root=C:\vcpkg
 
       - name: Install SRT (macOS)
         if: matrix.os == 'macos-15'
@@ -80,7 +80,7 @@ jobs:
             -Dgst-plugins-bad:d3d11=enabled
             -Dgst-plugins-bad:qt6d3d11=enabled
             -Dlibxml2:python=false
-          PKG_CONFIG_PATH: ${{ env.VCPKG_INSTALLATION_ROOT }}\installed\x64-windows\lib\pkgconfig;${{ env.PKG_CONFIG_PATH }}
+          PKG_CONFIG_PATH: C:\vcpkg\installed\x64-windows\lib\pkgconfig;${{ env.PKG_CONFIG_PATH }}
         run: meson setup builddir --prefix=${{ runner.temp }}/gstreamer ${{ env.meson_args }}
 
       - name: Configure meson (macOS)
