@@ -50,6 +50,11 @@ jobs:
           cache: true
           dir: ${{ github.workspace }}
 
+      - name: List Qt bin
+        run: |
+          echo "Listing Qt bin directory:"
+          ls -la ${{ github.workspace }}/Qt/**/bin || true
+
       - name: Cache
         uses: actions/cache@v4
         with:
@@ -89,11 +94,13 @@ jobs:
           meson_args: >
             --prefix=${{ runner.temp }}/gstreamer
             -Dbase=enabled
+            -Dgst-plugins-base:gl=enabled
             -Dgood=enabled
             -Dgst-plugins-good:qt6=enabled
             -Dbad=enabled
             -Dlibav=enabled
-        run: meson setup builddir ${{ env.meson_args }}
+        run: |
+          meson setup builddir ${{ env.meson_args }}
 
       - name: Build
         working-directory: gstreamer
