@@ -53,7 +53,7 @@ jobs:
       - name: List Qt bin
         run: |
           echo "Listing Qt bin directory:"
-          ls -la ${{ github.workspace }}/Qt/**/bin || true
+          ls -la ${{ github.workspace }}/Qt/6.8.3/macos/bin || true
 
       - name: Cache
         uses: actions/cache@v4
