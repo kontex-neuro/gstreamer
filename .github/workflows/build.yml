@@ -90,7 +90,6 @@ jobs:
             --prefix=${{ runner.temp }}/gstreamer
             -Dbase=enabled
             -Dgood=enabled
-            -Dgst-plugins-good:gl=enabled
             -Dgst-plugins-good:qt6=enabled
             -Dbad=enabled
             -Dlibav=enabled
