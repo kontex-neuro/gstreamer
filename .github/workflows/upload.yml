@@ -17,7 +17,7 @@ jobs:
       - name: Download all artifacts
         uses: actions/download-artifact@v5
         with:
-          path: dest
+          path: dist
 
       - name: Upload to spaces
         uses: BetaHuhn/do-spaces-action@v2
@@ -26,5 +26,5 @@ jobs:
           secret_key: ${{ secrets.SECRET_KEY }}
           space_name: ${{ secrets.SPACE_NAME }}
           space_region: ${{ secrets.SPACE_REGION }}
-          source: dest
+          source: dist
           out_dir: gstreamer/
