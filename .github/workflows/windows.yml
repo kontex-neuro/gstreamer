@@ -81,7 +81,7 @@ jobs:
         working-directory: gstreamer
         env:
           meson_args: >
-            --prefix=${{ runner.temp }}/gstreamer
+            --prefix="${{ runner.temp }}\gstreamer"
             -Dbase=enabled
             -Dgood=enabled
             -Dbad=enabled
@@ -109,7 +109,7 @@ jobs:
         run: meson install -C builddir
 
       - name: Zip
-        run: 7z a ${{ matrix.base_name }}.zip ${{ runner.temp }}/gstreamer
+        run: 7z a ${{ matrix.base_name }}.zip ${{ runner.temp }}\gstreamer
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
