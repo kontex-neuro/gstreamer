@@ -46,17 +46,23 @@ jobs:
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
         with:
-          version: 6.8.3
+          version: 6.8.*
           cache: true
           dir: ${{ github.workspace }}
           modules: 'qtshadertools'
+
+      - name: Cache vcpkg (Windows)
+        if: matrix.os == 'windows-2022'
+        uses: actions/cache@v4
+        with:
+          path: C:\vcpkg
+          key: ${{ matrix.base_name }}-vcpkg
 
       - name: Cache
         uses: actions/cache@v4
         with:
           path: gstreamer
-          key: ${{ matrix.base_name }}-${{ hashFiles('**/gstreamer') }}
-          restore-keys: ${{ matrix.base_name }}
+          key: ${{ matrix.base_name }}-gstreamer
 
       - name: Clone
         if: steps.cache-gstreamer.outputs.cache-hit != 'true'
@@ -95,6 +101,7 @@ jobs:
             -Dgood=enabled
             -Dgst-plugins-good:qt6=enabled
             -Dbad=enabled
+            -Dgst-plugins-bad:applemedia=enabled
             -Dlibav=enabled
         run: |
           meson setup builddir ${{ env.meson_args }}
