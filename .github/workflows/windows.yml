@@ -93,11 +93,11 @@ jobs:
             -Dlibxml2:python=false
           PKG_CONFIG_PATH: C:\vcpkg\installed\x64-windows\lib\pkgconfig;${{ env.PKG_CONFIG_PATH }}
         run: |
-          if [ ! -d builddir ]; then
+          if not exist builddir (
             meson setup builddir ${{ env.meson_args }}
-          else
+          ) else (
             meson setup --reconfigure builddir ${{ env.meson_args }}
-          fi
+          )
 
       - name: Build
         working-directory: gstreamer
