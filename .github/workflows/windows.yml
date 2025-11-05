@@ -1,11 +1,11 @@
-name: build
+name: windows
 
 on:
   workflow_dispatch:
   workflow_call:
 
 jobs:
-  build:
+  windows:
     strategy:
       matrix:
         include:
