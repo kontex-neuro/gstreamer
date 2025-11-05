@@ -9,9 +9,6 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: windows-2022
-            arch: x64
-            base_name: windows-x86_64
           - os: macos-15
             arch: arm64
             base_name: macos-arm64
@@ -31,16 +28,7 @@ jobs:
       - name: Install build tools
         run: pipx install meson ninja
 
-      - name: Setup compiler (Windows)
-        if: matrix.os == 'windows-2022'
-        uses: ilammy/msvc-dev-cmd@v1
-
-      - name: Install SRT (Windows)
-        if: matrix.os == 'windows-2022'
-        run: vcpkg install libsrt --vcpkg-root=C:\vcpkg
-
-      - name: Install SRT (macOS)
-        if: matrix.os == 'macos-15'
+      - name: Install SRT
         run: brew install srt
 
       - name: Install Qt
@@ -51,18 +39,13 @@ jobs:
           dir: ${{ github.workspace }}
           modules: 'qtshadertools'
 
-      - name: Cache vcpkg (Windows)
-        if: matrix.os == 'windows-2022'
+      - name: Cache gstreamer
         uses: actions/cache@v4
-        with:
-          path: C:\vcpkg
-          key: ${{ matrix.base_name }}-vcpkg
-
-      - name: Cache
-        uses: actions/cache@v4
+        id: cache-gstreamer
         with:
           path: gstreamer
-          key: ${{ matrix.base_name }}-gstreamer
+          key: ${{ matrix.base_name }}-gstreamer-${{ env.gst_version }}
+          restore-keys: ${{ matrix.base_name }}-gstreamer-
 
       - name: Clone
         if: steps.cache-gstreamer.outputs.cache-hit != 'true'
@@ -70,25 +53,13 @@ jobs:
         run: |
           if [ ! -d gstreamer ]; then
             git clone -b ${{ env.gst_version }} --single-branch https://gitlab.freedesktop.org/gstreamer/gstreamer.git
+          else
+            cd gstreamer
+            git fetch origin ${{ env.gst_version }}
+            git checkout ${{ env.gst_version }}
+            git pull
+            cd ..
           fi
-
-      - name: Configure meson (Windows)
-        working-directory: gstreamer
-        if: matrix.os == 'windows-2022'
-        env:
-          meson_args: >
-            --prefix=${{ runner.temp }}/gstreamer
-            -Dbase=enabled
-            -Dgood=enabled
-            -Dbad=enabled
-            -Dgst-plugins-bad:srt=enabled
-            -Dgst-plugins-bad:qsv=enabled
-            -Dgst-plugins-bad:d3d11=enabled
-            -Dgst-plugins-bad:qt6d3d11=enabled
-            -Dlibav=enabled
-            -Dlibxml2:python=false
-          PKG_CONFIG_PATH: C:\vcpkg\installed\x64-windows\lib\pkgconfig;${{ env.PKG_CONFIG_PATH }}
-        run: meson setup builddir ${{ env.meson_args }}
 
       - name: Configure meson (macOS)
         working-directory: gstreamer
@@ -104,7 +75,11 @@ jobs:
             -Dgst-plugins-bad:applemedia=enabled
             -Dlibav=enabled
         run: |
-          meson setup builddir ${{ env.meson_args }}
+          if [ ! -d builddir ]; then
+            meson setup builddir ${{ env.meson_args }}
+          else
+            meson setup --reconfigure builddir ${{ env.meson_args }}
+          fi
 
       - name: Build
         working-directory: gstreamer

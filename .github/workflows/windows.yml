@@ -1,0 +1,117 @@
+name: build
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: windows-2022
+            arch: x64
+            base_name: windows-x86_64
+
+    runs-on: ${{ matrix.os }}
+
+    env:
+      gst_version: 1.26
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: 3.13
+
+      - name: Install build tools
+        run: pipx install meson ninja
+
+      - name: Setup compiler
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Cache vcpkg
+        uses: actions/cache@v4
+        id: cache-vcpkg
+        with:
+          path: |
+            C:\vcpkg\buildtrees
+            C:\vcpkg\downloads
+            C:\vcpkg\installed
+            C:\vcpkg\packages
+          key: ${{ matrix.base_name }}-vcpkg-libsrt
+          restore-keys: ${{ matrix.base_name }}-vcpkg-
+
+      - name: Install SRT
+        if: steps.cache-vcpkg.outputs.cache-hit != 'true'
+        run: vcpkg install libsrt --vcpkg-root=C:\vcpkg
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: 6.8.*
+          cache: true
+          dir: ${{ github.workspace }}
+          modules: 'qtshadertools'
+
+      - name: Cache gstreamer
+        uses: actions/cache@v4
+        id: cache-gstreamer
+        with:
+          path: gstreamer
+          key: ${{ matrix.base_name }}-gstreamer-${{ env.gst_version }}
+          restore-keys: ${{ matrix.base_name }}-gstreamer-
+
+      - name: Clone
+        if: steps.cache-gstreamer.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          if [ ! -d gstreamer ]; then
+            git clone -b ${{ env.gst_version }} --single-branch https://gitlab.freedesktop.org/gstreamer/gstreamer.git
+          else
+            cd gstreamer
+            git fetch origin ${{ env.gst_version }}
+            git checkout ${{ env.gst_version }}
+            git pull
+            cd ..
+          fi
+
+      - name: Configure meson
+        working-directory: gstreamer
+        env:
+          meson_args: >
+            --prefix=${{ runner.temp }}/gstreamer
+            -Dbase=enabled
+            -Dgood=enabled
+            -Dbad=enabled
+            -Dgst-plugins-bad:srt=enabled
+            -Dgst-plugins-bad:qsv=enabled
+            -Dgst-plugins-bad:d3d11=enabled
+            -Dgst-plugins-bad:qt6d3d11=enabled
+            -Dlibav=enabled
+            -Dlibxml2:python=false
+          PKG_CONFIG_PATH: C:\vcpkg\installed\x64-windows\lib\pkgconfig;${{ env.PKG_CONFIG_PATH }}
+        run: |
+          if [ ! -d builddir ]; then
+            meson setup builddir ${{ env.meson_args }}
+          else
+            meson setup --reconfigure builddir ${{ env.meson_args }}
+          fi
+
+      - name: Build
+        working-directory: gstreamer
+        run: ninja -C builddir
+
+      - name: Install
+        working-directory: gstreamer
+        run: meson install -C builddir
+
+      - name: Zip
+        run: 7z a ${{ matrix.base_name }}.zip ${{ runner.temp }}/gstreamer
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.base_name }}
+          path: ${{ matrix.base_name }}.zip
