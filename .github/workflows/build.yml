@@ -13,8 +13,8 @@ jobs:
             arch: x64
             base_name: windows-x86_64
           - os: macos-15
-            arch: arm64
-            base_name: macos-arm64
+            arch: armv8
+            base_name: macos-armv8
 
     runs-on: ${{ matrix.os }}
 
