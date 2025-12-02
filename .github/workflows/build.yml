@@ -133,7 +133,7 @@ jobs:
       - name: Clone
         if: steps.cache-gstreamer.outputs.cache-hit != 'true'
         shell: bash
-        run: 
+        run: |
           if [ ! -d gstreamer ]; then
             git clone --depth 1 --branch ${{ env.gst_version }} https://gitlab.freedesktop.org/gstreamer/gstreamer.git
           fi
