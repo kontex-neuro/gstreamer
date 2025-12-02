@@ -133,7 +133,10 @@ jobs:
       - name: Clone
         if: steps.cache-gstreamer.outputs.cache-hit != 'true'
         shell: bash
-        run: git clone --depth 1 --branch ${{ env.gst_version }} https://gitlab.freedesktop.org/gstreamer/gstreamer.git
+        run: 
+          if [[ ! -d "gstreamer" ]]; then
+            git clone --depth 1 --branch ${{ env.gst_version }} https://gitlab.freedesktop.org/gstreamer/gstreamer.git
+          fi
 
       - name: Configure meson (Windows)
         if: matrix.os == 'windows-2022' && steps.cache-gstreamer.outputs.cache-hit != 'true'
