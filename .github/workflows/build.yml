@@ -116,8 +116,8 @@ jobs:
           PREFIX: ${{ runner.temp }}\gstreamer
         shell: cmd
         run: |
-          set meson_args="$BASE_ARGS --prefix=$PREFIX"
-          meson setup builddir $meson_args
+          set meson_args="%BASE_ARGS% --prefix=%PREFIX%"
+          meson setup builddir %meson_args%
 
       - name: Configure meson (macOS)
         if: matrix.os == 'macos-15' && steps.cache-gstreamer.outputs.cache-hit != 'true'
