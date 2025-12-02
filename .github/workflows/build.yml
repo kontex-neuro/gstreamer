@@ -20,24 +20,24 @@ jobs:
 
     env:
       gst_version: 1.26.8
-      windows_meson_args: >
-        -Dbase=enabled
-        -Dgood=enabled
-        -Dbad=enabled
-        -Dgst-plugins-bad:srt=enabled
-        -Dgst-plugins-bad:qsv=enabled
-        -Dgst-plugins-bad:d3d11=enabled
-        -Dgst-plugins-bad:qt6d3d11=enabled
-        -Dlibav=enabled
-        -Dlibxml2:python=false
-      macos_meson_args: >
-        -Dbase=enabled
-        -Dgood=enabled
-        -Dbad=enabled
-        -Dgst-plugins-base:gl=enabled
-        -Dgst-plugins-good:qt6=enabled
-        -Dgst-plugins-bad:applemedia=enabled
-        -Dlibav=enabled
+      # windows_meson_args: >
+      #   -Dbase=enabled
+      #   -Dgood=enabled
+      #   -Dbad=enabled
+      #   -Dgst-plugins-bad:srt=enabled
+      #   -Dgst-plugins-bad:qsv=enabled
+      #   -Dgst-plugins-bad:d3d11=enabled
+      #   -Dgst-plugins-bad:qt6d3d11=enabled
+      #   -Dlibav=enabled
+      #   -Dlibxml2:python=false
+      # macos_meson_args: >
+      #   -Dbase=enabled
+      #   -Dgood=enabled
+      #   -Dbad=enabled
+      #   -Dgst-plugins-base:gl=enabled
+      #   -Dgst-plugins-good:qt6=enabled
+      #   -Dgst-plugins-bad:applemedia=enabled
+      #   -Dlibav=enabled
 
     steps:
       - uses: actions/checkout@v5
@@ -80,23 +80,51 @@ jobs:
           dir: ${{ github.workspace }}
           modules: 'qtshadertools'
 
+      - name: Set env var (Windows)
+        env:
+          windows_meson_args: >
+            --prefix=${{ runner.temp }}\gstreamer
+            -Dbase=enabled
+            -Dgood=enabled
+            -Dbad=enabled
+            -Dgst-plugins-bad:srt=enabled
+            -Dgst-plugins-bad:qsv=enabled
+            -Dgst-plugins-bad:d3d11=enabled
+            -Dgst-plugins-bad:qt6d3d11=enabled
+            -Dlibav=enabled
+            -Dlibxml2:python=false
+        run: echo "meson_args=${{ env.windows_meson_args }}" >> $GITHUB_ENV
+
+      - name: Set env var (macOS)
+        if: matrix.os == 'macos-15'
+        env:
+          macos_meson_args: >
+            --prefix=${{ runner.temp }}/gstreamer
+            -Dbase=enabled
+            -Dgood=enabled
+            -Dbad=enabled
+            -Dgst-plugins-base:gl=enabled
+            -Dgst-plugins-good:qt6=enabled
+            -Dgst-plugins-bad:applemedia=enabled
+            -Dlibav=enabled
+        run: echo "meson_args=${{ env.macos_meson_args }}" >> $GITHUB_ENV
+
       - name: Generate meson config hash
         id: meson-hash
         shell: bash
         run: |
-          if [[ "${{ matrix.os }}" == "windows-2022" ]]; then
-            echo "hash=$(echo '${{ env.windows_meson_args }}' | sha256sum | cut -d' ' -f1)" >> $GITHUB_OUTPUT
-          else
-            echo "hash=$(echo '${{ env.macos_meson_args }}' | sha256sum | cut -d' ' -f1)" >> $GITHUB_OUTPUT
-          fi
+          echo "hash=$(echo '$meson_args' | sha256sum | cut -d' ' -f1)" >> $GITHUB_OUTPUT
+          # if [[ "${{ matrix.os }}" == "windows-2022" ]]; then
+          #   echo "hash=$(echo '$meson_args' | sha256sum | cut -d' ' -f1)" >> $GITHUB_OUTPUT
+          # else
+          #   echo "hash=$(echo '$meson_args' | sha256sum | cut -d' ' -f1)" >> $GITHUB_OUTPUT
+          # fi
 
       - name: Cache gstreamer
         uses: actions/cache@v4
         id: cache-gstreamer
         with:
-          path: |
-            gstreamer
-            ${{ runner.temp }}/gstreamer
+          path: gstreamer
           key: ${{ matrix.base_name }}-gstreamer-${{ env.gst_version }}-${{ steps.meson-hash.outputs.hash }}
           restore-keys: |
             ${{ matrix.base_name }}-gstreamer-${{ env.gst_version }}
@@ -112,21 +140,21 @@ jobs:
         working-directory: gstreamer
         env:
           PKG_CONFIG_PATH: ${{ github.workspace }};${{ env.PKG_CONFIG_PATH }}
-          BASE_ARGS: ${{ env.windows_meson_args }}
-          PREFIX: ${{ runner.temp }}\gstreamer
+          # BASE_ARGS: ${{ env.windows_meson_args }}
+          # PREFIX: ${{ runner.temp }}\gstreamer
         shell: cmd
         run: |
-          set meson_args="%BASE_ARGS% --prefix=%PREFIX%"
-          meson setup builddir %meson_args%
+          # set meson_args="%BASE_ARGS% --prefix=%PREFIX%"
+          meson setup builddir $meson_args
 
       - name: Configure meson (macOS)
         if: matrix.os == 'macos-15' && steps.cache-gstreamer.outputs.cache-hit != 'true'
         working-directory: gstreamer
-        env:
-          BASE_ARGS: ${{ env.macos_meson_args }}
-          PREFIX: ${{ runner.temp }}/gstreamer
+        # env:
+        #   BASE_ARGS: ${{ env.macos_meson_args }}
+        #   PREFIX: ${{ runner.temp }}/gstreamer
         run: |
-          meson_args="$BASE_ARGS --prefix=$PREFIX"
+          # meson_args="$BASE_ARGS --prefix=$PREFIX"
           meson setup builddir $meson_args
 
       - name: Build
@@ -135,7 +163,6 @@ jobs:
         run: ninja -C builddir
 
       - name: Install
-        if: steps.cache-gstreamer.outputs.cache-hit != 'true'
         working-directory: gstreamer
         run: meson install -C builddir
 
