@@ -1,0 +1,142 @@
+name: build
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: windows-2022
+            arch: x64
+            base_name: windows-x86_64
+          - os: macos-15
+            arch: arm64
+            base_name: macos-arm64
+
+    runs-on: ${{ matrix.os }}
+
+    env:
+      gst_version: 1.26.8
+      windows_meson_args: >
+        --prefix="${{ runner.temp }}\gstreamer"
+        -Dbase=enabled
+        -Dgood=enabled
+        -Dbad=enabled
+        -Dgst-plugins-bad:srt=enabled
+        -Dgst-plugins-bad:qsv=enabled
+        -Dgst-plugins-bad:d3d11=enabled
+        -Dgst-plugins-bad:qt6d3d11=enabled
+        -Dlibav=enabled
+        -Dlibxml2:python=false
+      macos_meson_args: >
+        --prefix=${{ runner.temp }}/gstreamer
+        -Dbase=enabled
+        -Dgood=enabled
+        -Dbad=enabled
+        -Dgst-plugins-base:gl=enabled
+        -Dgst-plugins-good:qt6=enabled
+        -Dgst-plugins-bad:applemedia=enabled
+        -Dlibav=enabled
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.x'
+
+      - name: Install build tools
+        run: pipx install meson ninja conan cmake
+
+      - name: Setup compiler (Windows)
+        if: matrix.os == 'windows-2022'
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Install conan profile
+        run: conan config install .github/conan_profiles/${{ matrix.os }}-${{ matrix.arch }} -tf profiles
+
+      - name: Cache conan
+        uses: actions/cache@v4
+        id: cache-conan
+        with:
+          path: ~/.conan2
+          key: ${{ matrix.base_name }}-conan-srt
+          restore-keys: ${{ matrix.base_name }}-conan-
+
+      - name: Install SRT (Windows)
+        if: matrix.os == 'windows-2022' && steps.cache-conan.outputs.cache-hit != 'true'
+        run: conan install --requires srt/1.5.4 --build=missing -pr:a ${{ matrix.os }}-${{ matrix.arch }} -s build_type=Release -g PkgConfigDeps
+
+      - name: Install SRT (macOS)
+        if: matrix.os == 'macos-15'
+        run: brew install srt
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: 6.8.*
+          cache: true
+          dir: ${{ github.workspace }}
+          modules: 'qtshadertools'
+
+      - name: Generate meson config hash
+        id: meson-hash
+        shell: bash
+        run: |
+          if [[ "${{ matrix.os }}" == "windows-2022" ]]; then
+            echo "hash=$(echo '${{ env.windows_meson_args }}' | sha256sum | cut -d' ' -f1)" >> $GITHUB_OUTPUT
+          else
+            echo "hash=$(echo '${{ env.macos_meson_args }}' | sha256sum | cut -d' ' -f1)" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Cache gstreamer
+        uses: actions/cache@v4
+        id: cache-gstreamer
+        with:
+          path: |
+            gstreamer
+            ${{ runner.temp }}/gstreamer
+          key: ${{ matrix.base_name }}-gstreamer-${{ env.gst_version }}-${{ steps.meson-hash.outputs.hash }}
+          restore-keys: |
+            ${{ matrix.base_name }}-gstreamer-${{ env.gst_version }}
+            ${{ matrix.base_name }}-gstreamer-
+
+      - name: Clone
+        if: steps.cache-gstreamer.outputs.cache-hit != 'true'
+        shell: bash
+        run: git clone --depth 1 --branch ${{ env.gst_version }} https://gitlab.freedesktop.org/gstreamer/gstreamer.git
+
+      - name: Configure meson (Windows)
+        if: matrix.os == 'windows-2022' && steps.cache-gstreamer.outputs.cache-hit != 'true'
+        working-directory: gstreamer
+        env:
+          PKG_CONFIG_PATH: ${{ github.workspace }};${{ env.PKG_CONFIG_PATH }}
+        shell: cmd
+        run: meson setup builddir ${{ env.windows_meson_args }}
+
+      - name: Configure meson (macOS)
+        if: matrix.os == 'macos-15' && steps.cache-gstreamer.outputs.cache-hit != 'true'
+        working-directory: gstreamer
+        run: meson setup builddir ${{ env.macos_meson_args }}
+
+      - name: Build
+        if: steps.cache-gstreamer.outputs.cache-hit != 'true'
+        working-directory: gstreamer
+        run: ninja -C builddir
+
+      - name: Install
+        if: steps.cache-gstreamer.outputs.cache-hit != 'true'
+        working-directory: gstreamer
+        run: meson install -C builddir
+
+      - name: Zip
+        run: 7z a ${{ matrix.base_name }}-${{ env.gst_version }}.zip "${{ runner.temp }}/gstreamer"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.base_name }}
+          path: ${{ matrix.base_name }}-${{ env.gst_version }}.zip

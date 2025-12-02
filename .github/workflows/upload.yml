@@ -4,14 +4,11 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-windows:
-    uses: ./.github/workflows/windows.yml
-
-  build-macos:
-    uses: ./.github/workflows/macos.yml
+  build:
+    uses: ./.github/workflows/build.yml
 
   upload:
-    needs: [build-windows, build-macos]
+    needs: [build]
     runs-on: ubuntu-latest
 
     steps:
