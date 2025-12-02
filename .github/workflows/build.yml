@@ -20,24 +20,6 @@ jobs:
 
     env:
       gst_version: 1.26.8
-      # windows_meson_args: >
-      #   -Dbase=enabled
-      #   -Dgood=enabled
-      #   -Dbad=enabled
-      #   -Dgst-plugins-bad:srt=enabled
-      #   -Dgst-plugins-bad:qsv=enabled
-      #   -Dgst-plugins-bad:d3d11=enabled
-      #   -Dgst-plugins-bad:qt6d3d11=enabled
-      #   -Dlibav=enabled
-      #   -Dlibxml2:python=false
-      # macos_meson_args: >
-      #   -Dbase=enabled
-      #   -Dgood=enabled
-      #   -Dbad=enabled
-      #   -Dgst-plugins-base:gl=enabled
-      #   -Dgst-plugins-good:qt6=enabled
-      #   -Dgst-plugins-bad:applemedia=enabled
-      #   -Dlibav=enabled
 
     steps:
       - uses: actions/checkout@v5
@@ -112,13 +94,7 @@ jobs:
       - name: Generate meson config hash
         id: meson-hash
         shell: bash
-        run: |
-          echo "hash=$(echo '$meson_args' | sha256sum | cut -d' ' -f1)" >> $GITHUB_OUTPUT
-          # if [[ "${{ matrix.os }}" == "windows-2022" ]]; then
-          #   echo "hash=$(echo '$meson_args' | sha256sum | cut -d' ' -f1)" >> $GITHUB_OUTPUT
-          # else
-          #   echo "hash=$(echo '$meson_args' | sha256sum | cut -d' ' -f1)" >> $GITHUB_OUTPUT
-          # fi
+        run: echo "hash=$(echo '$meson_args' | sha256sum | cut -d' ' -f1)" >> $GITHUB_OUTPUT
 
       - name: Cache gstreamer
         uses: actions/cache@v4
@@ -138,27 +114,18 @@ jobs:
             git clone --depth 1 --branch ${{ env.gst_version }} https://gitlab.freedesktop.org/gstreamer/gstreamer.git
           fi
 
-      - name: Configure meson (Windows)
-        if: matrix.os == 'windows-2022' && steps.cache-gstreamer.outputs.cache-hit != 'true'
-        working-directory: gstreamer
-        env:
-          PKG_CONFIG_PATH: ${{ github.workspace }};${{ env.PKG_CONFIG_PATH }}
-          # BASE_ARGS: ${{ env.windows_meson_args }}
-          # PREFIX: ${{ runner.temp }}\gstreamer
-        shell: cmd
-        run: |
-          # set meson_args="%BASE_ARGS% --prefix=%PREFIX%"
-          meson setup builddir $meson_args
+      # - name: Configure meson (Windows)
+      #   if: matrix.os == 'windows-2022' && steps.cache-gstreamer.outputs.cache-hit != 'true'
+      #   working-directory: gstreamer
+      #   env:
+      #     PKG_CONFIG_PATH: ${{ github.workspace }};${{ env.PKG_CONFIG_PATH }}
+      #   shell: cmd
+      #   run: meson setup builddir $meson_args  
 
-      - name: Configure meson (macOS)
-        if: matrix.os == 'macos-15' && steps.cache-gstreamer.outputs.cache-hit != 'true'
+      - name: Configure meson
+        if: steps.cache-gstreamer.outputs.cache-hit != 'true'
         working-directory: gstreamer
-        # env:
-        #   BASE_ARGS: ${{ env.macos_meson_args }}
-        #   PREFIX: ${{ runner.temp }}/gstreamer
-        run: |
-          # meson_args="$BASE_ARGS --prefix=$PREFIX"
-          meson setup builddir $meson_args
+        run: meson setup builddir $meson_args
 
       - name: Build
         if: steps.cache-gstreamer.outputs.cache-hit != 'true'
