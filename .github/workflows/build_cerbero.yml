@@ -140,6 +140,7 @@ jobs:
         working-directory: cerbero
         run: |
           .\tools\bootstrap-windows.ps1
+          git config --global core.autocrlf false
           .\cerbero-uninstalled -v qt6 -v noqt5 -v norust -c .\config\win64.cbc bootstrap
 
       - name: Configure build tool
