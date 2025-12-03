@@ -138,12 +138,14 @@ jobs:
       - name: Configure build tool
         if: matrix.os == 'windows-2022' && steps.cache-cerbero.outputs.cache-hit != 'true'
         working-directory: cerbero
-        run: .\tools\bootstrap-windows.ps1
+        run: |
+          .\tools\bootstrap-windows.ps1
+          .\cerbero-uninstalled -v qt6 -v noqt5 -v norust -c .\config\win64.cbc bootstrap
 
       - name: Configure build tool
         if: matrix.os == 'macos-15' && steps.cache-cerbero.outputs.cache-hit != 'true'
         working-directory: cerbero
-        run: ./cerbero-uninstalled -c config/cross-macos-universal.cbc bootstrap
+        run: ./cerbero-uninstalled -v qt6 -v noqt5 -v norust -c config/cross-macos-universal.cbc bootstrap
 
       # - name: Build
       #   if: steps.cache-gstreamer.outputs.cache-hit != 'true'
