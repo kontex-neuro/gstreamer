@@ -144,7 +144,7 @@ jobs:
         working-directory: cerbero
         env:
           CERBERO_HOME: "cb"
-          CERBERO_SOURCES: "cerbero-sources"
+          # CERBERO_SOURCES: "cerbero-sources"
           CERBERO: "./cerbero-uninstalled -c config/win64.cbc -c localconf.cbc"
           CERBERO_ARGS: "${DEFAULT_CERBERO_ARGS} -v nowerror"
           CERBERO_PACKAGE_ARGS: "-t"
@@ -161,7 +161,7 @@ jobs:
         working-directory: cerbero
         env:
           CERBERO_HOME: "cb"
-          CERBERO_SOURCES: "cerbero-sources"
+          # CERBERO_SOURCES: "cerbero-sources"
           CERBERO: "./cerbero-uninstalled -c config/win64.cbc -c localconf.cbc"
           CERBERO_ARGS: "${DEFAULT_CERBERO_ARGS} -v nowerror"
           CERBERO_PACKAGE_ARGS: "-t"
@@ -183,7 +183,7 @@ jobs:
         working-directory: cerbero
         env:
           CERBERO_HOME: "cb"
-          CERBERO_SOURCES: "cerbero-sources"
+          # CERBERO_SOURCES: "cerbero-sources"
           CERBERO: "./cerbero-uninstalled -c config/cross-macos-universal.cbc -c localconf.cbc"
           CERBERO_ARGS: "${DEFAULT_CERBERO_ARGS} -v nowerror"
           CERBERO_PACKAGE_ARGS: "-t"
