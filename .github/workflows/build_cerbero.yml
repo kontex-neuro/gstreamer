@@ -20,6 +20,10 @@ jobs:
 
     env:
       gst_version: 1.26.8
+      DEFAULT_CERBERO_ARGS: >
+        --variants werror
+        --clocktime
+        --timestamps
 
     steps:
       - uses: actions/checkout@v5
@@ -138,19 +142,59 @@ jobs:
       - name: Configure dependencies (Windows)
         if: matrix.os == 'windows-2022' && steps.cache-cerbero.outputs.cache-hit != 'true'
         working-directory: cerbero
+        env:
+          CERBERO_HOME: "cb"
+          CERBERO_SOURCES: "cerbero-sources"
+          CERBERO: "./cerbero-uninstalled -c config/win64.cbc -c localconf.cbc"
+          CERBERO_ARGS: "${DEFAULT_CERBERO_ARGS} -v nowerror"
+          CERBERO_PACKAGE_ARGS: "-t"
+          CERBERO_RUN_SUFFIX: "" # '.exe' on cross-winXX
+          CERBERO_BOOTSTRAP_SYSTEM: "no"
+          HAVE_CCACHE: "yes"
+          # location where the cerbero git repo is stored on the image
+          CERBERO_HOST_DIR: "/"
         run: |
           C:\msys64\msys2_shell.cmd -ucrt64 -defterm -no-start -here -use-full-path -lc "./ci/cerbero_setup.sh cerbero_deps_script"
 
       - name: Configure build tool (Windows)
         if: matrix.os == 'windows-2022' && steps.cache-cerbero.outputs.cache-hit != 'true'
         working-directory: cerbero
+        env:
+          CERBERO_HOME: "cb"
+          CERBERO_SOURCES: "cerbero-sources"
+          CERBERO: "./cerbero-uninstalled -c config/win64.cbc -c localconf.cbc"
+          CERBERO_ARGS: "${DEFAULT_CERBERO_ARGS} -v nowerror"
+          CERBERO_PACKAGE_ARGS: "-t"
+          CERBERO_RUN_SUFFIX: "" # '.exe' on cross-winXX
+          CERBERO_BOOTSTRAP_SYSTEM: "no"
+          HAVE_CCACHE: "yes"
+          # location where the cerbero git repo is stored on the image
+          CERBERO_HOST_DIR: "/"
         run: |
           C:\msys64\msys2_shell.cmd -ucrt64 -defterm -no-start -here -use-full-path -lc "./ci/cerbero_setup.sh cerbero_script"
 
-      - name: Configure build tool (macOS)
+      # - name: Configure build tool (macOS)
+      #   if: matrix.os == 'macos-15' && steps.cache-cerbero.outputs.cache-hit != 'true'
+      #   working-directory: cerbero
+      #   run: ./cerbero-uninstalled -v qt6 -v noqt5 -v norust -c config/cross-macos-universal.cbc bootstrap
+
+      - name: Configure dependencies (macOS)
         if: matrix.os == 'macos-15' && steps.cache-cerbero.outputs.cache-hit != 'true'
         working-directory: cerbero
-        run: ./cerbero-uninstalled -v qt6 -v noqt5 -v norust -c config/cross-macos-universal.cbc bootstrap
+        env:
+          CERBERO_HOME: "cb"
+          CERBERO_SOURCES: "cerbero-sources"
+          CERBERO: "./cerbero-uninstalled -c config/cross-macos-universal.cbc -c localconf.cbc"
+          CERBERO_ARGS: "${DEFAULT_CERBERO_ARGS} -v nowerror"
+          CERBERO_PACKAGE_ARGS: "-t"
+          CERBERO_RUN_SUFFIX: "" # '.exe' on cross-winXX
+          CERBERO_BOOTSTRAP_SYSTEM: "no"
+          HAVE_CCACHE: "yes"
+          # location where the cerbero git repo is stored on the image
+          CERBERO_HOST_DIR: "/"
+        run: |
+          ./ci/cerbero_setup.sh cerbero_before_script
+          ./ci/cerbero_setup.sh cerbero_deps_script
 
       # - name: Build
       #   if: steps.cache-gstreamer.outputs.cache-hit != 'true'
