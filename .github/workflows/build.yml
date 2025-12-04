@@ -133,7 +133,7 @@ jobs:
 
       - name: Install
         working-directory: gstreamer
-        run: meson install -C builddir --destdir installdir
+        run: meson install -C builddir --destdir gstreamer/installdir
 
       - name: Zip
         run: 7z a ${{ matrix.base_name }}-${{ env.gst_version }}.zip installdir
