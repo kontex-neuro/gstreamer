@@ -63,6 +63,7 @@ jobs:
           modules: 'qtshadertools'
 
       - name: Set env var (Windows)
+        if: matrix.os == 'windows-2022'
         env:
           windows_meson_args: >
             --prefix="C:\Program Files\gstreamer\"
@@ -120,12 +121,12 @@ jobs:
       #   env:
       #     PKG_CONFIG_PATH: ${{ github.workspace }};${{ env.PKG_CONFIG_PATH }}
       #   shell: cmd
-      #   run: meson setup builddir $meson_args  
+      #   run: meson setup builddir ${{ env.meson_args }}
 
       - name: Configure meson
         if: steps.cache-gstreamer.outputs.cache-hit != 'true'
         working-directory: gstreamer
-        run: meson setup builddir $meson_args
+        run: meson setup builddir ${{ env.meson_args }}
 
       - name: Build
         if: steps.cache-gstreamer.outputs.cache-hit != 'true'
