@@ -95,7 +95,7 @@ jobs:
       - name: Generate meson config hash
         id: meson-hash
         shell: bash
-        run: echo "hash=$(echo '$meson_args' | sha256sum | cut -d' ' -f1)" >> $GITHUB_OUTPUT
+        run: echo "hash=$(echo '${{ env.meson_args }}' | sha256sum | cut -d' ' -f1)" >> $GITHUB_OUTPUT
 
       - name: Cache gstreamer
         uses: actions/cache@v4
