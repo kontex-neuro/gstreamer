@@ -135,14 +135,19 @@ jobs:
       #   working-directory: gstreamer
       #   run: meson setup builddir $meson_args
           
-      - name: Configure build tool
+      - name: Configure dependencies (Windows)
         if: matrix.os == 'windows-2022' && steps.cache-cerbero.outputs.cache-hit != 'true'
         working-directory: cerbero
         run: |
-          .\tools\bootstrap-windows.ps1
-          .\cerbero-uninstalled.bat -v qt6 -v noqt5 -v norust -c .\config\win64.cbc bootstrap
+          C:\msys64\msys2_shell.cmd -ucrt64 -defterm -no-start -here -use-full-path -lc "./ci/cerbero_setup.sh cerbero_deps_script"
 
-      - name: Configure build tool
+      - name: Configure build tool (Windows)
+        if: matrix.os == 'windows-2022' && steps.cache-cerbero.outputs.cache-hit != 'true'
+        working-directory: cerbero
+        run: |
+          C:\msys64\msys2_shell.cmd -ucrt64 -defterm -no-start -here -use-full-path -lc "./ci/cerbero_setup.sh cerbero_script"
+
+      - name: Configure build tool (macOS)
         if: matrix.os == 'macos-15' && steps.cache-cerbero.outputs.cache-hit != 'true'
         working-directory: cerbero
         run: ./cerbero-uninstalled -v qt6 -v noqt5 -v norust -c config/cross-macos-universal.cbc bootstrap
