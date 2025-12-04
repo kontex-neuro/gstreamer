@@ -133,9 +133,15 @@ jobs:
         working-directory: gstreamer
         run: ninja -C builddir
 
-      - name: Install
+      - name: Install (Windows)
+        if: matrix.os == 'windows-2022'
         working-directory: gstreamer
-        run: meson install -C builddir
+        run: Start-Process -FilePath "meson" -ArgumentList "install", "-C", "builddir" -Verb RunAs -Wait
+
+      - name: Install (macOS)
+        if: matrix.os == 'macos-15'
+        working-directory: gstreamer
+        run: sudo meson install -C builddir
 
       - name: Zip (Windows)
         if: matrix.os == 'windows-2022'
